@@ -8,13 +8,13 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
 contract Marketplace is ReentrancyGuard {
-    //state variables
-    //marketplace fees
-    address payable public immutable feeAccount; //account that recieves fees
-    uint public immutable feePercent; //fee percentage on sales
-    uint public itemCount;
 
-    struct Item{
+    // Variables
+    address payable public immutable feeAccount; // the account that receives fees
+    uint public immutable feePercent; // the fee percentage on sales 
+    uint public itemCount; 
+
+    struct Item {
         uint itemId;
         IERC721 nft;
         uint tokenId;
@@ -22,16 +22,18 @@ contract Marketplace is ReentrancyGuard {
         address payable seller;
         bool sold;
     }
-    //index allows to search for offers event using the nft and seller addresses as filters
-        event Offered(
+
+    // itemId -> Item
+    mapping(uint => Item) public items;
+
+    event Offered(
         uint itemId,
         address indexed nft,
         uint tokenId,
         uint price,
         address indexed seller
-        );
-        
-        event Bought(
+    );
+    event Bought(
         uint itemId,
         address indexed nft,
         uint tokenId,
@@ -40,22 +42,17 @@ contract Marketplace is ReentrancyGuard {
         address indexed buyer
     );
 
-    //itemId -> Itemm
-    mapping(uint => Item) public items;
-
-    constructor(uint _feePercent){
+    constructor(uint _feePercent) {
         feeAccount = payable(msg.sender);
         feePercent = _feePercent;
     }
-    //nonreentrant momdifier prevents malicious calls
-    function makeItem( IERC721 _nft, uint _tokenId, uint _price) external nonReentrant {
-        //require accepts if condition
-        //if false, reverts state changes
+
+    // Make item to offer on the marketplace
+    function makeItem(IERC721 _nft, uint _tokenId, uint _price) external nonReentrant {
         require(_price > 0, "Price must be greater than zero");
-        //increment itemCount
+        // increment itemCount
         itemCount ++;
-        //transfer nft listed
-        //in order for transferFrom to work, the caller of the makeItem() needs to have approved the marketplace contract to transfer NFT in their behalf
+        // transfer nft
         _nft.transferFrom(msg.sender, address(this), _tokenId);
         // add new item to items mapping
         items[itemCount] = Item (
@@ -63,11 +60,9 @@ contract Marketplace is ReentrancyGuard {
             _nft,
             _tokenId,
             _price,
-            //seller account that called the makeItem function
             payable(msg.sender),
             false
         );
-
         // emit Offered event
         emit Offered(
             itemCount,
@@ -76,7 +71,6 @@ contract Marketplace is ReentrancyGuard {
             _price,
             msg.sender
         );
-
     }
 
     function purchaseItem(uint _itemId) external payable nonReentrant {
@@ -102,9 +96,7 @@ contract Marketplace is ReentrancyGuard {
             msg.sender
         );
     }
-
-        function getTotalPrice(uint _itemId) view public returns(uint){
+    function getTotalPrice(uint _itemId) view public returns(uint){
         return((items[_itemId].price*(100 + feePercent))/100);
     }
-
 }

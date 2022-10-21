@@ -1,15 +1,34 @@
 import { useState } from 'react'
 import { ethers } from "ethers"
 import { Row, Form, Button } from 'react-bootstrap'
-import { create as ipfsHttpClient } from 'ipfs-http-client'
-const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
+// import { create as ipfsHttpClient } from 'ipfs-http-client'
+//import { create as ipfsHttpClient } from 'ipfs-http-client'
+import { Buffer } from 'buffer';
+const ipfsClient = require('ipfs-http-client');
+
+const projectId = "2GS2MoHkgau5ASZmBjgHI0Aqx4D";
+const projectSecret = "dc5d947b6b657897424cfdd8fb1467d7";
+const auth =
+'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64');
+
+const client = ipfsClient.create({
+  host: 'ipfs.infura.io',
+  port: 5001,
+  protocol: 'https',
+  headers: {
+    authorization: auth,
+  },
+});
+
+//const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')"
+
+// const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
 
 const Create = ({ marketplace, nft }) => {
   const [image, setImage] = useState('')
   const [price, setPrice] = useState(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-
   const uploadToIPFS = async (event) => {
     event.preventDefault()
     const file = event.target.files[0]
@@ -17,7 +36,10 @@ const Create = ({ marketplace, nft }) => {
       try {
         const result = await client.add(file)
         console.log(result)
-        setImage(`https://ipfs.infura.io/ipfs/${result.path}`)
+        // setImage(`https://ipfs.infura.io/ipfs/${result.path}`)
+        //https://charrocrypto.infura-ipfs.io
+        setImage(`https://charrocrypto.infura-ipfs.io/ipfs/${result.path}`)
+
       } catch (error){
         console.log("ipfs image upload error: ", error)
       }
@@ -26,14 +48,15 @@ const Create = ({ marketplace, nft }) => {
   const createNFT = async () => {
     if (!image || !price || !name || !description) return
     try{
-      const result = await client.add(JSON.stringify({image,name, description, price, }))
+      const result = await client.add(JSON.stringify({image, price, name, description}))
       mintThenList(result)
     } catch(error) {
       console.log("ipfs uri upload error: ", error)
     }
   }
   const mintThenList = async (result) => {
-    const uri = `https://ipfs.infura.io/ipfs/${result.path}`
+    // const uri = `https://ipfs.infura.io/ipfs/${result.path}`
+    const uri = `https://charrocrypto.infura-ipfs.io/ipfs/${result.path}`
     // mint nft 
     await(await nft.mint(uri)).wait()
     // get tokenId of new nft 
